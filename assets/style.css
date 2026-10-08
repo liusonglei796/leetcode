@@ -1,0 +1,328 @@
+/* E:\leetcode\assets\style.css - Tufte-inspired clean typography & interactive components */
+
+:root {
+  --bg-color: #fffff8;
+  --text-color: #111111;
+  --text-muted: #555555;
+  --accent: #b22222;
+  --accent-light: #fbeae8;
+  --code-bg: #f4f3ea;
+  --border-color: #e0ded0;
+  --node-bg: #ffffff;
+  --node-border: #333333;
+  --pointer-curr: #0275d8;
+  --pointer-prev: #5cb85c;
+  --font-serif: Charter, "Bitstream Charter", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Fira Code", Consolas, "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.65;
+  margin: 0;
+  padding: 2rem 1rem;
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Header & Typography */
+header {
+  border-bottom: 2px solid var(--text-color);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.3rem;
+  font-weight: normal;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: normal;
+  margin-top: 2.5rem;
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.3rem;
+}
+
+h3 {
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+p {
+  margin: 1rem 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  background-color: var(--accent-light);
+}
+
+/* Sidenotes & Callouts */
+.callout {
+  background: var(--code-bg);
+  border-left: 4px solid var(--accent);
+  padding: 1rem 1.2rem;
+  margin: 1.5rem 0;
+  border-radius: 0 4px 4px 0;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+}
+
+.callout strong {
+  color: var(--accent);
+}
+
+/* Code blocks */
+pre, code {
+  font-family: var(--font-mono);
+}
+
+code {
+  background-color: var(--code-bg);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+pre {
+  background-color: var(--code-bg);
+  padding: 1.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Visual Interactive Diagram & Stepper */
+.visual-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.linked-list-stage {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 1.5rem 0;
+  padding: 1.2rem;
+  background: #fafaf5;
+  border-radius: 6px;
+  border: 1px dashed var(--border-color);
+  min-height: 100px;
+}
+
+.node-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.node {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--node-bg);
+  border: 2px solid var(--node-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-weight: bold;
+  font-size: 1.1rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.node.in-group {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.node.tail-unreversed {
+  border-color: #6c757d;
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+.node .node-label {
+  position: absolute;
+  top: -24px;
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  color: var(--pointer-curr);
+  white-space: nowrap;
+}
+
+.arrow {
+  margin: 0 0.5rem;
+  font-size: 1.3rem;
+  color: #777;
+  font-family: var(--font-mono);
+}
+
+.arrow.reversed {
+  color: var(--accent);
+  transform: rotate(180deg);
+}
+
+.stepper-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+
+button.btn {
+  background-color: var(--text-color);
+  color: var(--bg-color);
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: opacity 0.2s;
+}
+
+button.btn:hover {
+  opacity: 0.85;
+}
+
+button.btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.step-desc {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  margin: 0.8rem 0;
+  padding: 0.8rem;
+  background: #fff;
+  border-left: 3px solid #0275d8;
+}
+
+/* Quiz Section */
+.quiz-box {
+  margin: 2.5rem 0;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 1.5rem;
+}
+
+.quiz-question {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-family: var(--font-sans);
+}
+
+.quiz-option {
+  display: block;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.quiz-option:hover {
+  background-color: #f7f6ed;
+}
+
+.quiz-option.correct {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.quiz-option.incorrect {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  color: #721c24;
+}
+
+.quiz-feedback {
+  margin-top: 0.8rem;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  display: none;
+}
+
+/* Footer & Nav */
+footer {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Print layout */
+@media print {
+  body {
+    background-color: #fff;
+    color: #000;
+    font-size: 12pt;
+    padding: 0;
+  }
+  .stepper-controls, .quiz-box button {
+    display: none;
+  }
+  .callout, pre {
+    border-color: #999;
+  }
+}

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0001: 25. K 个一组翻转链表——探查与递归缝合</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="meta">Lesson 0001 &bull; Linked List Algorithms</div>
+      <h1>25. K 个一组翻转链表：探查与递归缝合</h1>
+      <p>将 Hard 难度的复杂指针拓扑，拆解为「先探后切、局部调头、递归接回」的标准心智模型。</p>
+    </header>
+
+    <section>
+      <h2>一、直击本质：你的核心思路</h2>
+      <div class="callout">
+        <strong>核心直觉</strong>：<br>
+        1. <strong>探步数</strong>：先探 $k$ 个节点，数量不足 $k$ 直接原样返回（递归基，保留原序）；<br>
+        2. <strong>记后继</strong>：够 $k$ 个就「探完节点记住第 $k+1$ 个」；<br>
+        3. <strong>局部转</strong>：反转当前前 $k$ 个节点；<br>
+        4. <strong>递归接</strong>：把剩余部分递归处理，接回当前组尾部。
+      </div>
+      <p>
+        许多人在做 LeetCode 25 题时容易陷入大量指针（<code>prev</code>, <code>curr</code>, <code>next</code>, <code>groupPrev</code>, <code>groupNext</code>）的混乱泥潭中，极易导致成环或断链。
+        而<strong>递归分治法</strong>的精妙之处在于：每一层递归只专注处理<strong>当前这 $k$ 个节点的翻转</strong>，剩下的长链表交给递归子问题，最终两段自然缝合。
+      </p>
+    </section>
+
+    <section>
+      <h2>二、动态指针推演模拟器 (Interactive Tracer)</h2>
+      <p>以测试用例 <code>head = [1, 2, 3, 4, 5], k = 2</code> 为例，点击下方按钮逐步查看指针状态迁移：</p>
+
+      <div class="visual-card">
+        <div id="step-indicator" style="font-family: var(--font-sans); font-weight: bold; color: var(--accent); margin-bottom: 0.5rem;">
+          步骤 1 / 5: 初始状态
+        </div>
+
+        <div class="linked-list-stage" id="list-stage">
+          <!-- 动态渲染节点 -->
+        </div>
+
+        <div class="step-desc" id="step-desc-text">
+          初始链表：1 -> 2 -> 3 -> 4 -> 5。指针 curr 从 head (1) 开始向前探测 2 个节点。
+        </div>
+
+        <div class="stepper-controls">
+          <button class="btn" id="prev-btn" onclick="prevStep()" disabled>&larr; 上一步</button>
+          <button class="btn" id="next-btn" onclick="nextStep()">下一步 &rarr;</button>
+          <button class="btn" style="background: transparent; color: var(--text-color); border: 1px solid var(--border-color);" onclick="resetStepper()">重置</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>三、时序代码实现 (Idiomatic Go)</h2>
+      <p>
+        代码严格按照业务执行的时间先后顺序向下排列，并标注每一个阶段的入参来源与出参去向：
+      </p>
+
+      <pre><code class="language-go">// reverseKGroup: K 个一组翻转链表主入口
+// 来源: 外部调用的待处理链表头节点 head 及步长 k
+// 用于: 返回完整翻转并缝合后的整条链表新头节点
+func reverseKGroup(head *ListNode, k int) *ListNode {
+    // Step 1.1: 探查当前组是否存在完整的 k 个节点
+    // 来源: 入参 head 与 k
+    // 用于: Step 1.2 校验步数与寻找下一组边界
+    curr := head
+    for i := 0; i &lt; k; i++ {
+        // Step 1.2: 校验探查结果，不足 k 个直接原样返回
+        // 来源: Step 1.1 当前探查指针状态
+        // 用于: 触发递归基，保护尾部保持原序
+        if curr == nil {
+            return head
+        }
+        curr = curr.Next
+    }
+
+    // Step 2.1: 记住第 k+1 个节点（下一组的头节点）
+    // 来源: Step 1.1 走满 k 步后指针停在的位置 curr
+    // 用于: Step 3.1 剩余链表递归调用的起始入参
+    nextGroupHead := curr
+
+    // Step 2.2: 翻转当前组的前 k 个节点 [head, nextGroupHead)
+    // 来源: 当前组头节点 head 与边界 nextGroupHead
+    // 用于: 获得局部反转后的新头节点 newHead
+    newHead := reverseRange(head, nextGroupHead)
+
+    // Step 3.1: 将剩余部分递归处理
+    // 来源: Step 2.1 记录的 nextGroupHead
+    // 用于: Step 3.2 得到后续链表翻转后的新头节点 remainedHead
+    remainedHead := reverseKGroup(nextGroupHead, k)
+
+    // Step 3.2: 把后续递归结果接回当前组的尾部
+    // 来源: 翻转后原 head 变为当前组尾节点，与 Step 3.1 返回的 remainedHead
+    // 用于: 完成整条链表的指针拓扑缝合
+    head.Next = remainedHead
+
+    return newHead
+}
+
+// Step 2.2.1: 局部区间反转辅助函数 [head, stop)
+// 来源: Step 2.2 传入的 head 与终止边界 stop
+// 用于: 翻转指定区间内的指针方向，并返回区间新头节点
+func reverseRange(head, stop *ListNode) *ListNode {
+    var prev *ListNode = nil
+    curr := head
+    for curr != stop {
+        next := curr.Next
+        curr.Next = prev
+        prev = curr
+        curr = next
+    }
+    return prev
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>四、检索强化即时测验 (Interactive Retrieval Practice)</h2>
+      <p>通过选择题巩固存储强度，每个选项字数均严格对齐以消除排版提示：</p>
+
+      <div class="quiz-box" id="quiz-1">
+        <div class="quiz-question">1. 当链表尾部剩余节点数严格不足 k 个时，算法应执行什么操作？</div>
+        <div class="quiz-option" onclick="checkAnswer(1, 0)">直接原样返回头节点</div>
+        <div class="quiz-option" onclick="checkAnswer(1, 1)">强制整体翻转该链表</div>
+        <div class="quiz-option" onclick="checkAnswer(1, 2)">补齐虚拟节点再翻转</div>
+        <div class="quiz-option" onclick="checkAnswer(1, 3)">抛出链表越界异常值</div>
+        <div class="quiz-feedback" id="feedback-1"></div>
+      </div>
+
+      <div class="quiz-box" id="quiz-2">
+        <div class="quiz-question">2. 在执行局部翻转前，为什么必须首先记录第 k+1 个节点？</div>
+        <div class="quiz-option" onclick="checkAnswer(2, 0)">保留后续链表递归入口</div>
+        <div class="quiz-option" onclick="checkAnswer(2, 1)">方便释放前面节点内存</div>
+        <div class="quiz-option" onclick="checkAnswer(2, 2)">计算整条链表总共长度</div>
+        <div class="quiz-option" onclick="checkAnswer(2, 3)">判断链表是否存在环路</div>
+        <div class="quiz-feedback" id="feedback-2"></div>
+      </div>
+
+      <div class="quiz-box" id="quiz-3">
+        <div class="quiz-question">3. 翻转当前组后，哪一个节点将接上后续递归处理返回的头节点？</div>
+        <div class="quiz-option" onclick="checkAnswer(3, 0)">翻转前当前组的原头节点</div>
+        <div class="quiz-option" onclick="checkAnswer(3, 1)">翻转后当前组的新头节点</div>
+        <div class="quiz-option" onclick="checkAnswer(3, 2)">下一组探测到的第后继点</div>
+        <div class="quiz-option" onclick="checkAnswer(3, 3)">全链表初始设定的哨兵点</div>
+        <div class="quiz-feedback" id="feedback-3"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>五、权威推荐与课后建议</h2>
+      <p>
+        <strong>推荐精读资料</strong>：<br>
+        推荐阅读 LeetCode 官方题解及 <a href="https://labuladong.online/algo/data-structure/reverse-linked-list-recursion/" target="_blank">Labuladong 的递归翻转链表专题</a>。重点比对“递归回溯时连接”与“迭代栈维护”两种视角的优劣。
+      </p>
+      <div class="callout">
+        <strong>遇到困惑随时提问</strong>：我是您的算法专属导师，如果在指针流转、递归栈深度或时空复杂度推导上有任何疑问，请随时在对话框中向我发起提问！
+      </div>
+    </section>
+
+    <footer>
+      <div>&rarr; 查阅配套速查表: <a href="../reference/0001-linked-list-reversal-cheatsheet.html">0001-linked-list-reversal-cheatsheet.html</a></div>
+      <div>LeetCode 25 Lesson &bull; E:\leetcode</div>
+    </footer>
+  </div>
+
+  <script>
+    // 互动推演模拟器逻辑
+    const steps = [
+      {
+        title: "步骤 1 / 5: 初始状态与前探指针准备",
+        desc: "链表为 1 -> 2 -> 3 -> 4 -> 5，步长 k = 2。curr 从 head(1) 开始向前探测 2 个节点。",
+        nodes: [
+          { val: 1, label: "head, curr", group: "in-group" },
+          { val: 2, label: "", group: "in-group" },
+          { val: 3, label: "", group: "" },
+          { val: 4, label: "", group: "" },
+          { val: 5, label: "", group: "" }
+        ]
+      },
+      {
+        title: "步骤 2 / 5: 探完 2 步，锁定第 k+1 个节点",
+        desc: "curr 成功前进 2 步停留在 3。探测成功（满 2 个），将 3 记为 nextGroupHead（下一组递归入口）。",
+        nodes: [
+          { val: 1, label: "head", group: "in-group" },
+          { val: 2, label: "", group: "in-group" },
+          { val: 3, label: "nextGroupHead", group: "" },
+          { val: 4, label: "", group: "" },
+          { val: 5, label: "", group: "" }
+        ]
+      },
+      {
+        title: "步骤 3 / 5: 局部翻转前 2 个节点 [1, 2)",
+        desc: "将 [1, 2] 翻转为 2 -> 1。此时 2 成为当前组的 newHead，原 head (1) 变成了尾节点，其 Next 暂时断开。",
+        nodes: [
+          { val: 2, label: "newHead", group: "in-group" },
+          { val: 1, label: "原 head (尾)", group: "in-group" },
+          { val: 3, label: "递归入口", group: "" },
+          { val: 4, label: "", group: "" },
+          { val: 5, label: "", group: "" }
+        ]
+      },
+      {
+        title: "步骤 4 / 5: 递归处理剩余链表 [3, 4, 5]",
+        desc: "子递归处理：[3, 4] 满 2 个翻转为 4 -> 3；5 不足 2 个原样返回并接在 3 后面，子链返回结果为 4 -> 3 -> 5。",
+        nodes: [
+          { val: 2, label: "当前头", group: "in-group" },
+          { val: 1, label: "当前尾 (待接)", group: "in-group" },
+          { val: 4, label: "remainedHead", group: "" },
+          { val: 3, label: "", group: "" },
+          { val: 5, label: "保持原序", group: "tail-unreversed" }
+        ]
+      },
+      {
+        title: "步骤 5 / 5: 缝合接回，整体拓扑完成！",
+        desc: "执行 head.Next = remainedHead (1.Next = 4)。最终全链表为：2 -> 1 -> 4 -> 3 -> 5。返回 newHead (2)！",
+        nodes: [
+          { val: 2, label: "新头", group: "in-group" },
+          { val: 1, label: "", group: "in-group" },
+          { val: 4, label: "", group: "in-group" },
+          { val: 3, label: "", group: "in-group" },
+          { val: 5, label: "原序", group: "tail-unreversed" }
+        ]
+      }
+    ];
+
+    let currentStepIdx = 0;
+
+    function renderStep(idx) {
+      const step = steps[idx];
+      document.getElementById("step-indicator").innerText = step.title;
+      document.getElementById("step-desc-text").innerText = step.desc;
+
+      const stage = document.getElementById("list-stage");
+      stage.innerHTML = "";
+
+      step.nodes.forEach((n, i) => {
+        const nodeGroup = document.createElement("div");
+        nodeGroup.className = "node-group";
+
+        const nodeEl = document.createElement("div");
+        nodeEl.className = "node " + (n.group || "");
+        nodeEl.innerText = n.val;
+
+        if (n.label) {
+          const lbl = document.createElement("div");
+          lbl.className = "node-label";
+          lbl.innerText = n.label;
+          nodeEl.appendChild(lbl);
+        }
+
+        nodeGroup.appendChild(nodeEl);
+
+        if (i < step.nodes.length - 1) {
+          const arrow = document.createElement("div");
+          arrow.className = "arrow";
+          arrow.innerText = "→";
+          nodeGroup.appendChild(arrow);
+        }
+
+        stage.appendChild(nodeGroup);
+      });
+
+      document.getElementById("prev-btn").disabled = (idx === 0);
+      document.getElementById("next-btn").disabled = (idx === steps.length - 1);
+    }
+
+    function nextStep() {
+      if (currentStepIdx < steps.length - 1) {
+        currentStepIdx++;
+        renderStep(currentStepIdx);
+      }
+    }
+
+    function prevStep() {
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        renderStep(currentStepIdx);
+      }
+    }
+
+    function resetStepper() {
+      currentStepIdx = 0;
+      renderStep(currentStepIdx);
+    }
+
+    // 初始化渲染
+    renderStep(0);
+
+    // 测验逻辑
+    const correctAnswers = {
+      1: {
+        idx: 0,
+        feedback: "正确！题目要求尾部剩余不足 k 个时严格保持原有顺序，因此直接返回 head 触发递归基。"
+      },
+      2: {
+        idx: 0,
+        feedback: "正确！区间反转会改变前 k 个节点的指针指向，必须提前保存第 k+1 个节点作为子递归的入口。"
+      },
+      3: {
+        idx: 0,
+        feedback: "正确！前 k 个节点翻转后，原 head 变成了该组末尾节点，其 Next 指针负责挂接后续子链。"
+      }
+    };
+
+    function checkAnswer(qNum, selectedIdx) {
+      const box = document.getElementById(`quiz-${qNum}`);
+      const options = box.querySelectorAll(".quiz-option");
+      const feedback = document.getElementById(`feedback-${qNum}`);
+      const target = correctAnswers[qNum];
+
+      options.forEach((opt, idx) => {
+        opt.className = "quiz-option";
+        if (idx === target.idx) {
+          opt.classList.add("correct");
+        } else if (idx === selectedIdx && selectedIdx !== target.idx) {
+          opt.classList.add("incorrect");
+        }
+      });
+
+      feedback.style.display = "block";
+      if (selectedIdx === target.idx) {
+        feedback.style.color = "#155724";
+        feedback.innerHTML = `<strong>&check; 回答正确：</strong>${target.feedback}`;
+      } else {
+        feedback.style.color = "#721c24";
+        feedback.innerHTML = `<strong>&cross; 回答有误：</strong>请重新回想指针翻转后的拓扑结构！`;
+      }
+    }
+  </script>
+</body>
+</html>

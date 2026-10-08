@@ -1,0 +1,63 @@
+package main
+
+// 105. 从前序与中序遍历序列构造二叉树
+// 给定两个整数数组 preorder 和 inorder ，其中 preorder 是二叉树的先序遍历，inorder 是同一棵树的中序遍历，请构造二叉树并返回其根节点。
+//用前序数组定位根节点，用中序数组切分左右子树的界限
+/**
+ * Definition for a binary tree node.
+ * type TreeNode struct {
+ *     Val int
+ *     Left *TreeNode
+ *     Right *TreeNode
+ * }
+ */
+func buildTree(preorder []int, inorder []int) *TreeNode {
+    // 1. 建立哈希表：在中序遍历中快速定位根节点的值，避免 O(n) 的线性扫描
+    // 键为节点的值，值为该值在 inorder 切片中的索引下标
+    valToInIdx := make(map[int]int, len(inorder))
+    for idx, val := range inorder {
+        valToInIdx[val] = idx
+    }
+
+    // 辅助递归函数：
+    // preL: 当前子树在前序遍历序列中的起始下标
+    // inL:  当前子树在中序遍历序列中的起始下标
+    // size: 当前子树包含的节点总数
+    var dfs func(preL, inL, size int) *TreeNode
+    dfs = func(preL, inL, size int) *TreeNode {
+        // 递归基：如果子树节点数为 0，说明当前子树为空（叶子节点的子节点或单边子树为空）
+        if size <= 0 {
+            return nil
+        }
+
+        // 前序遍历特点：当前区间的首元素必然是当前子树的根节点
+        rootVal := preorder[preL]
+        root := &TreeNode{Val: rootVal}
+
+        // 中序遍历特点：根节点左边全是左子树，右边全是右子树
+        // 查出当前根节点在中序遍历中的索引下标
+        rootIdx := valToInIdx[rootVal]
+
+        // 计算左子树与右子树包含的节点总数
+        leftSize := rootIdx - inL            // 左子树节点数 = 根节点索引 - 中序起点
+        rightSize := size - 1 - leftSize    // 右子树节点数 = 当前总数 - 1(根节点自身) - 左子树节点数
+
+        // 递归构建左子树并挂载：
+        // - preorder 起点：跳过当前根节点，为 preL + 1
+        // - inorder 起点：左子树排在最左侧，依然是 inL
+        // - 节点个数：leftSize
+        root.Left = dfs(preL+1, inL, leftSize)
+
+        // 递归构建右子树并挂载：
+        // - preorder 起点：跳过根节点和整棵左子树，为 preL + 1 + leftSize
+        // - inorder 起点：跳过根节点，为 rootIdx + 1
+        // - 节点个数：rightSize
+        root.Right = dfs(preL+1+leftSize, rootIdx+1, rightSize)
+
+        // 返回当前已经组装好左右子树的完整根节点
+        return root
+    }
+
+    // 初始入口：整棵树从前序 0、中序 0 开始，总节点数为 len(preorder)
+    return dfs(0, 0, len(preorder))
+}
